@@ -13,4 +13,5 @@ static_presets = [
     {'name': 'VF Firm Capacity by Year', 'result': 'Value New Techs', 'preset': 'VF Firm Capacity by Year'},
     {'name': 'Gen Frac', 'result': 'Generation National (TWh)', 'preset': 'Stacked Bars Gen Frac', 'config':{'filter':{'tech':{'exclude':storage_techs}}}},
     {'name': 'Cap Frac', 'result': 'Capacity National (GW)', 'preset': 'Stacked Bars Cap Frac'},
+    {'name': 'Bulk System Electricity Price ($/MWh)', 'sheet_name':'elec_price', 'result': 'Requirement Prices and Quantities National', 'preset': 'Bulk System Electricity Price ($/MWh)'},
 ]
