@@ -576,7 +576,6 @@ def pre_valnew(df, **kw):
     df['vf_spatial_simult'] = (df['val_tot']/df['mwh']) / (df['val_tot_sys']/df['mwh'])
     df['vf_interaction'] = df['vf_spatial_simult'] / df['vf_spatial']
     df['vf_load'] = (df['val_load']/df['mwh']) / (df['val_load_bench_sys']/df['mwh_bench_sys'])
-    df['vf_no_rps'] = ((df['val_tot'] - df['val_rps'])/df['mwh']) / ((df['val_tot_bench_sys'] - df['val_rps_bench_sys'])/df['mwh_bench_sys'])
     df['vf_resmarg_permw'] = (df['val_resmarg']/df['mw']) / (df['val_resmarg_bench_sys']/df['mw_bench_sys'])
     return df
 
@@ -2296,8 +2295,6 @@ results_meta = collections.OrderedDict((
             ('VF Energy by Year', {'x':'year','y':'vf_load','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
             ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
-            #Total value factor by year, excluding state RPS value in both technology and benchmark
-            ('VF No RPS by Year', {'x':'year','y':'vf_no_rps','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
         )),
         }
     ),

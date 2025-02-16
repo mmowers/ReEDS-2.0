@@ -11,7 +11,6 @@ static_presets = [
     {'name': 'VF by Year Explode Scenario', 'result': 'Value New Techs', 'preset': 'VF by Year Explode Scenario'},
     {'name': 'VF Energy by Year', 'result': 'Value New Techs', 'preset': 'VF Energy by Year'},
     {'name': 'VF Firm Capacity by Year', 'result': 'Value New Techs', 'preset': 'VF Firm Capacity by Year'},
-    {'name': 'VF No RPS by Year', 'result': 'Value New Techs', 'preset': 'VF No RPS by Year'},
     {'name': 'Gen Frac', 'result': 'Generation National (TWh)', 'preset': 'Stacked Bars Gen Frac', 'config':{'filter':{'tech':{'exclude':storage_techs}}}},
     {'name': 'Cap Frac', 'result': 'Capacity National (GW)', 'preset': 'Stacked Bars Cap Frac'},
 ]
