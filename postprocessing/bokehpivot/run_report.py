@@ -41,3 +41,9 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
+
+#conv_2022_to_2023 = 1.041 #Converts LCOE_base ATB costs (2022$) to 2023$
+#LCOE_base uses default ATB 2024 techs: Tech 1 class 4 Moderate land-based wind and class 5 Moderate utility PV
+ptc = 18.31481632 #11.36 2004$/MWh, taken from ReEDS run ptc_value_scaled.
+#Need to ask about inflation reduction act PTC to include in LCOE_base!
+#df_vf = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
