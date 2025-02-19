@@ -13,6 +13,7 @@ import sys
 import pandas as pd
 import shutil
 import importlib
+from pdb import set_trace as b
 #EDIT: Manually set bokehpivot_dir to another path if this file is in a different location.
 bokehpivot_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(1, bokehpivot_dir)
@@ -42,8 +43,33 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
-#conv_2022_to_2023 = 1.041 #Converts LCOE_base ATB costs (2022$) to 2023$
+#Read in value factors
+df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
+df = df[df['tech'].isin(['wind-ons','upv'])].copy()
+df = df[df['year']>2025].copy()
+
+#Merge with generation fractions
+df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
+df_gen_frac = df_gen_frac.rename(columns={'Generation (TWh)': 'gen_frac'})
+df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
+df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
+
+#Merge with benchmark price
+df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
+df_bench = df_bench.rename(columns={'$':'Pb'})
+df_bench = df_bench.groupby(['scenario','year'], as_index=False)['Pb'].sum()
+df = df.merge(df_bench, on=['scenario','year'], how='left')
+
+#Merge with LCOE_base
 #LCOE_base uses default ATB 2024 techs: Tech 1 class 4 Moderate land-based wind and class 5 Moderate utility PV
+df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
+df_lcoe_base['lcoe'] = df_lcoe_base['lcoe'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
+df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
 ptc = 18.31481632 #11.36 2004$/MWh, taken from ReEDS run ptc_value_scaled.
-#Need to ask about inflation reduction act PTC to include in LCOE_base!
-#df_vf = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
+#If "_IRA" is in the scenario name, subtract the ptc from lcoe
+df.loc[df['scenario'].str.contains('_IRA'), 'lcoe'] = df['lcoe'] - ptc
+
+df['vcf'] = df['lcoe'] / df['Pb']
+df['cf'] = df['vf'] / df['vcf']
+df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
+b()
