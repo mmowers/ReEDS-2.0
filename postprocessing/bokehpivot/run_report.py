@@ -65,7 +65,7 @@ df = df.merge(df_bench, on=['scenario','year'], how='left')
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
 df_lcoe_base['lcoe'] = df_lcoe_base['lcoe'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
-ptc = 18.31481632 #11.36 2004$/MWh, taken from ReEDS run ptc_value_scaled.
+ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe'] = df['lcoe'] - ptc
 
