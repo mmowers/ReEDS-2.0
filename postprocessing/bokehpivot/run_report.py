@@ -49,11 +49,26 @@ df = df.rename(columns={'vf': 'value_factor'})
 df = df[df['tech'].isin(['wind-ons','upv'])].copy()
 df = df[df['year']>2025].copy()
 
-#Merge with benchmark price
+#Merge with vf components
+df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatial')
+df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
+df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal')
+df = df.merge(df_vf_temporal, on=['scenario','tech','year'], how='left')
+df_vf_interaction = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_interaction')
+df = df.merge(df_vf_interaction, on=['scenario','tech','year'], how='left')
+
+#Merge with benchmark price and calculate LVOE
 df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
 df_bench = df_bench.rename(columns={'$':'benchmark_price'})
 df_bench = df_bench.groupby(['scenario','year'], as_index=False)['benchmark_price'].sum()
 df = df.merge(df_bench, on=['scenario','year'], how='left')
+df['lvoe'] = df['value_factor'] * df['benchmark_price']
+
+#Merge with LVOE components
+df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
+df = df.merge(df_lvoe_energy, on=['scenario','tech','year'], how='left')
+df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_resmarg').rename(columns={'val_resmarg':'lvoe_resmarg'})
+df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 
 #Merge with LCOE_base
 #LCOE_base uses default ATB 2024 techs: Tech 1 class 4 Moderate land-based wind and class 5 Moderate utility PV
@@ -64,7 +79,7 @@ ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
 
-df['lvoe'] = df['value_factor'] * df['benchmark_price']
+#Calculate metrics
 df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
 df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
 df['lcoe_adder'] = df['lvoe'] - df['lcoe_base']
