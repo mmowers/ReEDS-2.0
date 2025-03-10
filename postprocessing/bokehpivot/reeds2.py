@@ -2295,6 +2295,16 @@ results_meta = collections.OrderedDict((
             ('VF Energy by Year', {'x':'year','y':'vf_load','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
             ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            #Tempoal, spatial, and interaction value factors
+            ('VF Spatial by Year', {'x':'year','y':'vf_spatial','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Temporal by Year', {'x':'year','y':'vf_temporal','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Interaction by Year', {'x':'year','y':'vf_interaction','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            #LVOE and LVOE components
+            ('LVOE by Year', {'x':'year','y':'val_tot','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('LVOE Energy by Year', {'x':'year','y':'val_load','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('LVOE Firm Capacity by Year', {'x':'year','y':'val_resmarg','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('LVOE Operating Reserves by Year', {'x':'year','y':'val_opres','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('LVOE State RPS by Year', {'x':'year','y':'val_rps','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
         )),
         }
     ),

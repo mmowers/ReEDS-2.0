@@ -45,31 +45,43 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 
 #Read in value factors
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
+df = df.rename(columns={'vf': 'value_factor'})
 df = df[df['tech'].isin(['wind-ons','upv'])].copy()
 df = df[df['year']>2025].copy()
 
-#Merge with generation fractions
-df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
-df_gen_frac = df_gen_frac.rename(columns={'Generation (TWh)': 'gen_frac'})
-df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
-df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
-
 #Merge with benchmark price
 df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
-df_bench = df_bench.rename(columns={'$':'Pb'})
-df_bench = df_bench.groupby(['scenario','year'], as_index=False)['Pb'].sum()
+df_bench = df_bench.rename(columns={'$':'benchmark_price'})
+df_bench = df_bench.groupby(['scenario','year'], as_index=False)['benchmark_price'].sum()
 df = df.merge(df_bench, on=['scenario','year'], how='left')
 
 #Merge with LCOE_base
 #LCOE_base uses default ATB 2024 techs: Tech 1 class 4 Moderate land-based wind and class 5 Moderate utility PV
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
-df_lcoe_base['lcoe'] = df_lcoe_base['lcoe'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
+df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
 ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
-df.loc[df['scenario'].str.contains('_IRA'), 'lcoe'] = df['lcoe'] - ptc
+df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
 
-df['vcf'] = df['lcoe'] / df['Pb']
-df['cf'] = df['vf'] / df['vcf']
+df['lvoe'] = df['value_factor'] * df['benchmark_price']
+df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
+df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
+df['lcoe_adder'] = df['lvoe'] - df['lcoe_base']
+df['integration_cost'] = df['benchmark_price'] - df['lvoe']
+df['value_cost_adder'] = df['benchmark_price'] - df['lcoe_base']
+
+#Merge with generation
+df_gen = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen')
+df_gen = df_gen.rename(columns={'Generation (TWh)': 'gen_twh'})
+df_gen = df_gen[['scenario','tech','year','gen_twh']].copy()
+df = df.merge(df_gen, on=['scenario','tech','year'], how='left')
+
+#Merge with generation fraction
+df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
+df_gen_frac = df_gen_frac.rename(columns={'Generation (TWh)': 'gen_frac'})
+df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
+df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
+
 df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
 b()
