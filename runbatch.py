@@ -399,6 +399,7 @@ def solvestring_sequential(
             'GSw_PVB_Dur',
             'GSw_ValStr', 'GSw_gopt', 'solver',
             'debug',
+            'ForceMandate', 'ForceStartYear', 'endyear', 'ForceStartLevel', 'ForceEndLevel', 'ForceTech',
         ]])
         + '\n'
     )

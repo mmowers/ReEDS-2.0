@@ -342,6 +342,22 @@ cost_cap_fin_mult(i,r,t)$[gas(i)$(not ccs(i))] =
 
 * --- End calculations of cost_cap_fin_mult family of parameters --- *
 
+$ifthen %ForceMandate% == 1
+*what about CO2_storage_cost and co2_captured_incentive?
+cost_cap(i,t)$(tmodel(t) and cost_cap(i,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    cost_cap(i,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+cost_fom(i,v,r,t)$(tmodel(t) and cost_fom(i,v,r,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    cost_fom(i,v,r,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+cost_vom(i,v,r,t)$(tmodel(t) and cost_vom(i,v,r,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    cost_vom(i,v,r,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+cost_opres(i,ortype,t)$(tmodel(t) and cost_opres(i,ortype,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    cost_opres(i,ortype,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+fuel_price(i,r,t)$(tmodel(t) and fuel_price(i,r,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    fuel_price(i,r,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+rsc_fin_mult(i,r,t)$(tmodel(t) and rsc_fin_mult(i,r,t) and %ForceTech%(i) and yeart(t)>=%ForceStartYear%) =
+    rsc_fin_mult(i,r,t)*(%ForceStartLevel% + (%ForceEndLevel% - %ForceStartLevel%)/(%endyear% - %ForceStartYear%)*(yeart(t) - %ForceStartYear%)) ;
+$endif
+
 * --- Estimate curtailment from "old" hybrid PV+battery ---
 
 $ifthene %cur_year%==2010

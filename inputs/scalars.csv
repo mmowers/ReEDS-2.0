@@ -77,7 +77,7 @@ trans_contingency_level_energy,0,"--integer-- n-x contingency level to use for i
 trans_contingency_level_prm,0,"--integer-- n-x contingency level to use for initial capacity (PRM) trading limits (1 means n-1)"
 trans_contingency_level_transgroup,1,"--integer-- n-x contingency level to use for initial transmission interface group flow constraint"
 trans_crp,40,"--years-- transmission capital recovery period (financial lifetime / evaluation period). Applied to transmission lines, AC/DC converters, and substations."
-trans_fom_frac,0.015,"--fraction-- Transmission FOM cost expressed as fraction of upfront cost [https://publications.jrc.ec.europa.eu/repository/handle/JRC92496]"
+trans_fom_frac,0.0001,"--fraction-- Transmission FOM cost expressed as fraction of upfront cost [https://publications.jrc.ec.europa.eu/repository/handle/JRC92496]"
 trans_fom_region_mult,0,"--boolean-- indicate whether to use regional multipliers on transmission FOM (1) or just the base cost (0)"
 vom_hyd,1.0244,"--2004$/MWh-- hydropower VOM (only one for all hydro)"
 upgrade_inflator,1.72,inflator for 1987 cost values of upgrade costs in the generator database
