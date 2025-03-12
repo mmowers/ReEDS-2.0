@@ -2,7 +2,7 @@
 timetype,Sequential or Intertemporal,seq; int; win,seq,
 ignore,"0=run this case, 1=ignore this case",0; 1,0,
 AWS,Switch for when running on AWS,0; 1,0,
-yearset_suffix,Set of years that are modeled,default; 1yr_2yr; 1yr_5yr; 2yr_1yr2040_5yr; annual; annualMod; beyond2050step5; beyond2050step10; biennial; 5yr; 4yr; 3yr,3yr,
+yearset_suffix,Set of years that are modeled,N/A,3yr,
 endyear,Last year to be modeled,N/A,2050,
 windows_suffix,Set of windows that are modeled,default; step5; step10; 2100,default,
 solver,Solver for GAMS to use,CPLEX; gurobi,CPLEX,

@@ -1,6 +1,6 @@
 ,Default Value,test,ref,ref_IRA,upv,upv_lowBat,upv_highBat,onswind,onswind_lowBat,onswind_highBat,offwind,vre,gas,nuclear
 ignore,1,0,,,,,,,,,,,,
-yearset_suffix,5yr,,,,,,,,,,,,,
+yearset_suffix,5yr_ish,,,,,,,,,,,,,
 endyear,2050,2035,,,,,,,,,,,,
 GSw_Region,usa,interconnect/ercot,,,,,,,,,,,,
 GSw_RegionResolution,aggreg,,,,,,,,,,,,,
