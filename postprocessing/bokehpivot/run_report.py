@@ -47,7 +47,7 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
 df = df.rename(columns={'vf': 'value_factor'})
 df = df[df['tech'].isin(['wind-ons','upv'])].copy()
-df = df[df['year']>2025].copy()
+df = df[df['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
 
 #Merge with vf components
 df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatial')
