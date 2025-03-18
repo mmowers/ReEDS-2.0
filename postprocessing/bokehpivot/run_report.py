@@ -79,12 +79,32 @@ ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
 
+#Add cost multipliers
+df_scens = pd.read_csv(data_source)
+for i, scen in df_scens.iterrows():
+    sw = pd.read_csv(f'{scen["path"]}/inputs_case/switches.csv', index_col=0).iloc[:,0]
+    if sw['ForceMandate']=='1':
+        df_scens.loc[i,'forcetech'] = sw['ForceTech']
+        df_scens.loc[i,'y0'] = int(sw['ForceStartYear'])
+        df_scens.loc[i,'y1'] = int(sw['endyear'])
+        df_scens.loc[i,'m0'] = float(sw['ForceStartLevel'])
+        df_scens.loc[i,'m1'] = float(sw['ForceEndLevel'])
+forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
+df_force = df_scens.merge(forcetech_map, on='forcetech', how='left')
+df_force = df_force.rename(columns={'name':'scenario'})[['tech','scenario','y0','y1','m0','m1']].copy()
+df = df.merge(df_force, on=['tech','scenario'], how='left')
+df['force_mult'] = 1 #Initialized to 1.
+mult_cond = (df['y0']<=df['year'])&(df['y1']>=df['year'])
+df.loc[mult_cond, 'force_mult'] = df['m0'] + (df['year']-df['y0'])*(df['m1']-df['m0'])/(df['y1']-df['y0'])
+df = df.drop(columns=['y0','y1','m0','m1']).copy()
+df['lcoe_base'] = df['lcoe_base'] * df['force_mult']
+
 #Calculate metrics
 df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
 df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
-df['lcoe_adder'] = df['lvoe'] - df['lcoe_base']
+df['lcoe_adder'] = (df['lvoe'] - df['lcoe_base']) / df['force_mult'] #Here we unadjust by force_mult to get the real adder.
 df['integration_cost'] = df['benchmark_price'] - df['lvoe']
-df['value_cost_adder'] = df['benchmark_price'] - df['lcoe_base']
+df['value_cost_adder'] = df['lcoe_adder'] + df['integration_cost']
 
 #Merge with generation
 df_gen = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen')
