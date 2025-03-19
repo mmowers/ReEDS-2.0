@@ -78,6 +78,8 @@ df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
 df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
+
+#If "_IRA" is in the scenario name, subtract the PTC from LCOE
 ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
@@ -94,11 +96,13 @@ for i, scen in df_scens.iterrows():
         df_scens.loc[i,'m1'] = float(sw['ForceEndLevel'])
 df_force = df_scens.merge(df_forcetech_map, on='forcetech', how='left')
 df_force = df_force.rename(columns={'name':'scenario'})[['tech','scenario','y0','y1','m0','m1']].copy()
+df_force['frc'] = 1
 df = df.merge(df_force, on=['tech','scenario'], how='left')
 df['force_mult'] = 1 #Initialized to 1.
 mult_cond = (df['y0']<=df['year'])&(df['y1']>=df['year'])
 df.loc[mult_cond, 'force_mult'] = df['m0'] + (df['year']-df['y0'])*(df['m1']-df['m0'])/(df['y1']-df['y0'])
 df = df.drop(columns=['y0','y1','m0','m1']).copy()
+df['frc'] = df['frc'].fillna(0)
 df['lcoe_base'] = df['lcoe_base'] * df['force_mult']
 
 #Calculate metrics
@@ -121,4 +125,26 @@ df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
 df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
 
 df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
-b()
+
+#Make plots and line fits
+import plotly.express as px #I needed to run "pip install plotly statsmodels"
+os.makedirs(f'{output_dir}/plots')
+df_frc = df[df['frc']==1].copy()
+df_frc['tech scenario'] = df_frc['tech'] + ' ' + df_frc['scenario']
+plots = [
+    {'x':'gen_frac','y':'value_factor'},
+    {'x':'gen_frac','y':'value_cost_factor'},
+    {'x':'gen_frac','y':'cost_factor'},
+    {'x':'gen_twh','y':'lcoe_adder'},
+    {'x':'gen_twh','y':'value_cost_adder'},
+    {'x':'gen_twh','y':'integration_cost'},
+]
+for plot in plots:
+    fig = px.scatter(df_frc, x=plot['x'], y=plot['y'], color='tech scenario',
+        hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
+        template='plotly_white', width=950, height=630)
+    # fig.update_xaxes(range=[0, 1.005])
+    # fig.update_yaxes(range=[0, 1.205])
+    fig.update_layout(font=dict(size=13))
+    fig.update_traces(marker=dict(size=10))
+    fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}.html')
