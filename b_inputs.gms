@@ -288,6 +288,7 @@ set
   ccsflex_sto(i)       "Flexible CCS technologies with storage",
   ccsflex(i)           "Flexible CCS technologies",
   cf_tech(i)           "technologies that have a specified capacity factor"
+  coal_new(i)          "coal-new",
   coal_ccs(i)          "technologies that use coal and have CCS",
   coal(i)              "technologies that use coal",
   cofire(i)            "cofire technologies",
@@ -927,6 +928,7 @@ ccsflex_dac(i)$(not ban(i))         = yes$i_subsets(i,'ccsflex_dac') ;
 ccsflex_sto(i)$(not ban(i))         = yes$i_subsets(i,'ccsflex_sto') ;
 ccsflex(i)$(not ban(i))             = yes$i_subsets(i,'ccsflex') ;
 cf_tech(i)$(not ban(i))             = yes$i_subsets(i,'cf_tech') ;
+coal_new(i)$(not ban(i))            = yes$i_subsets(i,'coal_new') ;
 coal_ccs(i)$(not ban(i))            = yes$i_subsets(i,'coal_ccs') ;
 coal(i)$(not ban(i))                = yes$i_subsets(i,'coal') ;
 cofire(i)$(not ban(i))              = yes$i_subsets(i,'cofire') ;

@@ -43,10 +43,14 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
+#Read in custom files
+df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
+df_forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
+
 #Read in value factors
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
 df = df.rename(columns={'vf': 'value_factor'})
-df = df[df['tech'].isin(['wind-ons','upv'])].copy()
+df = df[df['tech'].isin(df_forcetech_map['tech'])].copy()
 df = df[df['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
 
 #Merge with vf components
@@ -71,8 +75,7 @@ df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_re
 df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 
 #Merge with LCOE_base
-#LCOE_base uses default ATB 2024 techs: Tech 1 class 4 Moderate land-based wind and class 5 Moderate utility PV
-df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
+#LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
 df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
 ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
@@ -89,8 +92,7 @@ for i, scen in df_scens.iterrows():
         df_scens.loc[i,'y1'] = int(sw['endyear'])
         df_scens.loc[i,'m0'] = float(sw['ForceStartLevel'])
         df_scens.loc[i,'m1'] = float(sw['ForceEndLevel'])
-forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
-df_force = df_scens.merge(forcetech_map, on='forcetech', how='left')
+df_force = df_scens.merge(df_forcetech_map, on='forcetech', how='left')
 df_force = df_force.rename(columns={'name':'scenario'})[['tech','scenario','y0','y1','m0','m1']].copy()
 df = df.merge(df_force, on=['tech','scenario'], how='left')
 df['force_mult'] = 1 #Initialized to 1.
