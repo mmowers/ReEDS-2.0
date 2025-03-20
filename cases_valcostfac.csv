@@ -1,7 +1,7 @@
 ,Default Value,test,ref,ref_IRA,upv,upv_lowBat,upv_highBat,onswind,onswind_lowBat,onswind_highBat,offwind,vre,gas,nuclear,coal
 ignore,1,0,,,,,,,,,,,,,
-yearset_suffix,5yr_ish,,,,,,,,,,,,,,
-endyear,2050,2035,,,,,,,,,,,,,
+yearset_suffix,2yr_ish,,,,,,,,,,,,,,
+endyear,2050,2030,,,,,,,,,,,,,
 GSw_Region,usa,interconnect/ercot,,,,,,,,,,,,,
 GSw_RegionResolution,aggreg,,,,,,,,,,,,,,
 GSw_HierarchyFile,agg2,,,,,,,,,,,,,,
@@ -25,8 +25,8 @@ GSw_StateCap,0,,,,,,,,,,,,,,
 GSw_NukeStateBan,0,,,,,,,,,,,,,,
 GSw_BatteryMandate,0,,,,,,,,,,,,,,
 ForceMandate,1,,0,0,,,,,,,,,,,
-ForceStartYear,2025,,,,,,,,,,,,,,
-ForceStartLevel,1,,,,,,,,,,,,,0.6,0.7
-ForceEndLevel,0.01,,,,,,,,,,,,,,
+ForceStartYear,2024,,,,,,,,,,,,,,
+ForceStartLevel,1,,,,,,,,,,0.5,,,0.6,0.7
+ForceEndLevel,0.05,,,,,,,,,,,,,,
 ForceTech,onswind,,,,upv,upv,upv,onswind,onswind,onswind,ofswind,vre,gas_cc,nuclear,coal_new
 batteryscen,battery_ATB_2024_moderate,,,,,battery_ATB_2024_conservative,battery_ATB_2024_advanced,,battery_ATB_2024_conservative,battery_ATB_2024_advanced,,,,,
