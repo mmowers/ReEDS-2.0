@@ -12,3 +12,4 @@ vre,#aec7e8,/projects/cambium/mmowers/ReEDS_pub/runs/vcf3_vre
 gas,#ffbb78,/projects/cambium/mmowers/ReEDS_pub/runs/vcf3_gas
 nuclear,#98df8a,/projects/cambium/mmowers/ReEDS_pub/runs/vcf3_nuclear
 coal,#98df8a,/projects/cambium/mmowers/ReEDS_pub/runs/vcf3_coal
+test,#ff7f0e,/projects/cambium/mmowers/ReEDS_pub/runs/vcf3_test
