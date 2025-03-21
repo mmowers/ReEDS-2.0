@@ -5036,6 +5036,8 @@ scalar nukebancostmult "--fraction-- penalty for constructing new nuclear in a r
 * For offshore wind, rsc_fin_mult(i,r,t) also carries the ITC that is applied to the transmission costs in the resource supply curve cost, while rsc_fin_mult_no_ITC(i,r,t) carries financing multipliers for its transmission costs without the ITC
 parameter rsc_fin_mult(i,r,t)       "capital cost multiplier for resource supply curve technologies that have their capital costs included in the supply curves" ;
 parameter rsc_fin_mult_noITC(i,r,t) "capital cost multiplier excluding ITC for resource supply curve technologies that have their capital costs included in the supply curves" ;
+parameter rsc_fin_mult_out(i,r,t);
+parameter rsc_fin_mult_noITC_out(i,r,t);
 
 
 
