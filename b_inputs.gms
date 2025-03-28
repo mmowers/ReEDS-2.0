@@ -5038,6 +5038,8 @@ parameter rsc_fin_mult(i,r,t)       "capital cost multiplier for resource supply
 parameter rsc_fin_mult_noITC(i,r,t) "capital cost multiplier excluding ITC for resource supply curve technologies that have their capital costs included in the supply curves" ;
 parameter rsc_fin_mult_out(i,r,t);
 parameter rsc_fin_mult_noITC_out(i,r,t);
+parameter forcetechmult(i,t);
+forcetechmult(i,t) = 1;
 
 
 
