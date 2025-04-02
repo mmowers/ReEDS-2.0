@@ -312,6 +312,7 @@ set
   evmc_shape(i)        "ev flexibility as adoptable change to load from response to pricing",
   fossil(i)            "fossil technologies"
   gas_cc_ccs(i)        "techs that are gas combined cycle and have CCS",
+  gas_cc_noccs(i)       "techs that are gas combined cycle without CCS",
   gas_cc(i)            "techs that are gas combined cycle",
   gas_ct(i)            "techs that are gas combustion turbine",
   gas(i)               "techs that use gas (but not o-g-s)",
@@ -952,6 +953,7 @@ evmc_storage(i)$(not ban(i))        = yes$i_subsets(i,'evmc_storage') ;
 evmc_shape(i)$(not ban(i))          = yes$i_subsets(i,'evmc_shape') ;
 fossil(i)$(not ban(i))              = yes$i_subsets(i,'fossil') ;
 gas_cc_ccs(i)$(not ban(i))          = yes$i_subsets(i,'gas_cc_ccs') ;
+gas_cc_noccs(i)$(not ban(i))         = yes$i_subsets(i,'gas_cc_noccs') ;
 gas_cc(i)$(not ban(i))              = yes$i_subsets(i,'gas_cc') ;
 gas_ct(i)$(not ban(i))              = yes$i_subsets(i,'gas_ct') ;
 gas(i)$(not ban(i))                 = yes$i_subsets(i,'gas') ;
