@@ -129,8 +129,15 @@ df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
 #Make plots and line fits
 import plotly.express as px #I needed to run "pip install plotly statsmodels"
 os.makedirs(f'{output_dir}/plots')
-df_frc = df[df['frc']==1].copy()
-df_frc['tech scenario'] = df_frc['tech'] + ' ' + df_frc['scenario']
+#Restrict to just those scenarios with 'frc' == 1 or other specified scenario-tech combinations
+plot_cond = (
+    (df['frc']==1) |
+    ((df['tech'].isin(['upv','wind-ons'])) & (df['scenario'].isin(['ref','ref_IRA','tax']))) |
+    ((df['tech']=='gas-cc') & (df['scenario'].isin(['upv','onswind','ref','ref_IRA','tax']))) |
+    ((df['tech']=='gas-cc-ccs_mod') & (df['scenario'].isin(['tax'])))
+)
+df_plot = df[plot_cond].copy()
+df_plot['tech scenario'] = df_plot['tech'] + ' ' + df_plot['scenario']
 plots = [
     {'x':'gen_frac','y':'value_factor'},
     {'x':'gen_frac','y':'value_cost_factor'},
@@ -140,7 +147,7 @@ plots = [
     {'x':'gen_twh','y':'integration_cost'},
 ]
 for plot in plots:
-    fig = px.scatter(df_frc, x=plot['x'], y=plot['y'], color='tech scenario',
+    fig = px.scatter(df_plot, x=plot['x'], y=plot['y'], color='tech scenario',
         hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
         template='plotly_white', width=950, height=630)
     # fig.update_xaxes(range=[0, 1.005])
