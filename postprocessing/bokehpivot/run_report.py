@@ -13,6 +13,7 @@ import sys
 import pandas as pd
 import shutil
 import importlib
+import copy
 from pdb import set_trace as b
 #EDIT: Manually set bokehpivot_dir to another path if this file is in a different location.
 bokehpivot_dir = os.path.dirname(os.path.realpath(__file__))
@@ -60,6 +61,8 @@ df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_tempo
 df = df.merge(df_vf_temporal, on=['scenario','tech','year'], how='left')
 df_vf_interaction = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_interaction')
 df = df.merge(df_vf_interaction, on=['scenario','tech','year'], how='left')
+df['vf_temporal_local'] = df['vf_temporal'] * df['vf_interaction']
+df['vf_spatial_simultaneous'] = df['vf_spatial'] * df['vf_interaction']
 
 #Merge with benchmark price and calculate LVOE
 df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
@@ -73,6 +76,8 @@ df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_ene
 df = df.merge(df_lvoe_energy, on=['scenario','tech','year'], how='left')
 df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_resmarg').rename(columns={'val_resmarg':'lvoe_resmarg'})
 df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
+df['vf_energy'] = df['lvoe_energy'] / df['benchmark_price']
+df['vf_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
 #Merge with LCOE_base
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
@@ -142,16 +147,31 @@ plots = [
     {'x':'gen_frac','y':'value_factor'},
     {'x':'gen_frac','y':'value_cost_factor'},
     {'x':'gen_frac','y':'cost_factor'},
+    {'x':'gen_frac','y':'vf_energy'},
+    {'x':'gen_frac','y':'vf_resmarg'},
+    {'x':'gen_frac','y':'vf_temporal'},
+    {'x':'gen_frac','y':'vf_spatial'},
+    {'x':'gen_frac','y':'vf_interaction'},
+    {'x':'gen_frac','y':'vf_temporal_local'},
+    {'x':'gen_frac','y':'vf_spatial_simultaneous'},
     {'x':'gen_twh','y':'lcoe_adder'},
     {'x':'gen_twh','y':'value_cost_adder'},
     {'x':'gen_twh','y':'integration_cost'},
 ]
-for plot in plots:
-    fig = px.scatter(df_plot, x=plot['x'], y=plot['y'], color='tech scenario',
+#Add plots with an upper limit on gen_frac
+gen_frac_lim = 0.65
+df_plot_lim = df_plot[df_plot['gen_frac']<=gen_frac_lim].copy()
+plots_lim = copy.deepcopy(plots)
+for p in plots_lim:
+    p['lim'] = 'yes'
+for plot in plots + plots_lim:
+    df_plt = df_plot_lim if 'lim' in plot else df_plot
+    fig = px.scatter(df_plt, x=plot['x'], y=plot['y'], color='tech scenario',
         hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
         template='plotly_white', width=950, height=630)
     # fig.update_xaxes(range=[0, 1.005])
     # fig.update_yaxes(range=[0, 1.205])
     fig.update_layout(font=dict(size=13))
     fig.update_traces(marker=dict(size=10))
-    fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}.html')
+    lim_str = f'-lim{int(gen_frac_lim*100)}pct' if 'lim' in plot else ''
+    fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}{lim_str}.html')
