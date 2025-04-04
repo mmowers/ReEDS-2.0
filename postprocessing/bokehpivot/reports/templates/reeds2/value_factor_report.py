@@ -25,7 +25,7 @@ static_presets = [
     {'name': 'LVOE State RPS by Year', 'sheet_name':'lvoe_rps', 'result': 'Value New Techs', 'preset': 'LVOE State RPS by Year'},
     {'name': 'VF by Year', 'sheet_name':'vf', 'result': 'Value New Techs', 'preset': 'VF by Year'},
     {'name': 'VF Energy by Year', 'sheet_name':'vf_energy', 'result': 'Value New Techs', 'preset': 'VF Energy by Year'},
-    {'name': 'VF Firm Capacity by Year', 'sheet_name':'vf_firmcap', 'result': 'Value New Techs', 'preset': 'VF Firm Capacity by Year'},
+    {'name': 'VF Firm Capacity by Year', 'sheet_name':'vf_resmarg', 'result': 'Value New Techs', 'preset': 'VF Firm Capacity by Year'},
     {'name': 'VF Spatial by Year', 'sheet_name':'vf_spatial', 'result': 'Value New Techs', 'preset': 'VF Spatial by Year'},
     {'name': 'VF Temporal by Year', 'sheet_name':'vf_temporal', 'result': 'Value New Techs', 'preset': 'VF Temporal by Year'},
     {'name': 'VF Interaction by Year', 'sheet_name':'vf_interaction', 'result': 'Value New Techs', 'preset': 'VF Interaction by Year'},

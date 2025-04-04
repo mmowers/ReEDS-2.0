@@ -55,6 +55,10 @@ df = df[df['tech'].isin(df_forcetech_map['tech'])].copy()
 df = df[df['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
 
 #Merge with vf components
+df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy').rename(columns={'vf_load':'vf_energy'})
+df = df.merge(df_vf_energy, on=['scenario','tech','year'], how='left')
+df_vf_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg')
+df = df.merge(df_vf_resmarg, on=['scenario','tech','year'], how='left')
 df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatial')
 df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
 df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal')
@@ -76,8 +80,8 @@ df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_ene
 df = df.merge(df_lvoe_energy, on=['scenario','tech','year'], how='left')
 df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_resmarg').rename(columns={'val_resmarg':'lvoe_resmarg'})
 df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
-df['vf_energy'] = df['lvoe_energy'] / df['benchmark_price']
-df['vf_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
+df['vf_comp_energy'] = df['lvoe_energy'] / df['benchmark_price']
+df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
 #Merge with LCOE_base
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
@@ -149,6 +153,8 @@ plots = [
     {'x':'gen_frac','y':'cost_factor'},
     {'x':'gen_frac','y':'vf_energy'},
     {'x':'gen_frac','y':'vf_resmarg'},
+    {'x':'gen_frac','y':'vf_comp_energy'},
+    {'x':'gen_frac','y':'vf_comp_resmarg'},
     {'x':'gen_frac','y':'vf_temporal'},
     {'x':'gen_frac','y':'vf_spatial'},
     {'x':'gen_frac','y':'vf_interaction'},

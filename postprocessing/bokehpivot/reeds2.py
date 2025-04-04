@@ -576,6 +576,7 @@ def pre_valnew(df, **kw):
     df['vf_spatial_simult'] = (df['val_tot']/df['mwh']) / (df['val_tot_sys']/df['mwh'])
     df['vf_interaction'] = df['vf_spatial_simult'] / df['vf_spatial']
     df['vf_load'] = (df['val_load']/df['mwh']) / (df['val_load_bench_sys']/df['mwh_bench_sys'])
+    df['vf_resmarg'] = (df['val_resmarg']/df['mwh']) / (df['val_resmarg_bench_sys']/df['mwh_bench_sys'])
     df['vf_resmarg_permw'] = (df['val_resmarg']/df['mw']) / (df['val_resmarg_bench_sys']/df['mw_bench_sys'])
     return df
 
@@ -2294,7 +2295,9 @@ results_meta = collections.OrderedDict((
             #Value factor of energy alone, that is, energy value per MWh of a tech compared to that of the benchmark
             ('VF Energy by Year', {'x':'year','y':'vf_load','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
-            ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('VF Firm Capacity by Year', {'x':'year','y':'vf_resmarg','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            #Value factor of firm capacity alone, that is, capacity value per MW of a tech compared to that of the benchmark
+            ('VF Firm Capacity per MW by Year', {'x':'year','y':'vf_resmarg_permw','y_b':'mw','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             #Tempoal, spatial, and interaction value factors
             ('VF Spatial by Year', {'x':'year','y':'vf_spatial','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('VF Temporal by Year', {'x':'year','y':'vf_temporal','y_b':'mwh','y_agg':'sum(a*b)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
