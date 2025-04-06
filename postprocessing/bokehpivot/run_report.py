@@ -198,11 +198,17 @@ df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_c
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
 df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
 print(f'VCF_adj: {VCF_adj}')
+#Find average VF for all conv_techs, and use that to scale the VF for all techs (old method)
+VF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_factor'].mean()
+df_plot_core['value_factor_adj_old'] = df_plot_core['value_factor'] / VF_adj
+print(f'VF_adj (old): {VF_adj}')
+df_plot_core.to_csv(f'{output_dir}/valcostfac_core.csv', index=False)
 plots_core = [
     {'x':'gen_frac','y':'value_factor', 'core': 'yes'},
+    {'x':'gen_frac','y':'value_factor_adj_old', 'core': 'yes'},
     {'x':'gen_frac','y':'cost_factor', 'core': 'yes'},
-    {'x':'gen_frac','y':'value_cost_factor', 'core': 'yes'},
     {'x':'gen_frac','y':'cost_factor_adj', 'core': 'yes'},
+    {'x':'gen_frac','y':'value_cost_factor', 'core': 'yes'},
     {'x':'gen_frac','y':'value_cost_factor_adj', 'core': 'yes'},
     {'x':'gen_frac','y':'value_cost_factor_adj2', 'core': 'yes'},
 ]
