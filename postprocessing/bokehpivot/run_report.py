@@ -45,6 +45,10 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #CUSTOM POSTPROCESSING
 #Any post-processing of the excel data that was produced. you can read excel data into dataframes by importing pandas and using pandas.read_excel()
 
+out_txt = f'{output_dir}/out.txt'
+with open(out_txt, 'w') as f:
+    print("Results:", file=f)
+
 #Read in custom files
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
 df_forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
@@ -197,11 +201,13 @@ df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_c
 #Find average VCF for all conv_techs, and use that to scale the VCF for all techs
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
 df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
-print(f'VCF_adj: {VCF_adj}')
+with open(out_txt, 'a') as f:
+    print(f'VCF_adj: {VCF_adj}', file=f)
 #Find average VF for all conv_techs, and use that to scale the VF for all techs (old method)
 VF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_factor'].mean()
 df_plot_core['value_factor_adj_old'] = df_plot_core['value_factor'] / VF_adj
-print(f'VF_adj (old): {VF_adj}')
+with open(out_txt, 'a') as f:
+    print(f'VF_adj (old): {VF_adj}', file=f)
 df_plot_core.to_csv(f'{output_dir}/valcostfac_core.csv', index=False)
 plots_core = [
     {'x':'gen_frac','y':'value_factor', 'core': 'yes'},
