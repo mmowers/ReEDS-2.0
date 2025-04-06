@@ -11,6 +11,7 @@ If you run this file from another location, update 'bokehpivot_dir' below.
 import os
 import sys
 import pandas as pd
+import scipy
 import shutil
 import importlib
 import copy
@@ -47,6 +48,7 @@ shutil.copy2(os.path.realpath(__file__), output_dir)
 #Read in custom files
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
 df_forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
+df_core = pd.read_csv(f'{bokehpivot_dir}/core_tech_scen.csv')
 
 #Read in value factors
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
@@ -114,6 +116,11 @@ df = df.drop(columns=['y0','y1','m0','m1']).copy()
 df['frc'] = df['frc'].fillna(0)
 df['lcoe_base'] = df['lcoe_base'] * df['force_mult']
 
+#Add core tech-scenario combinations
+df_core['core'] = 1
+df = df.merge(df_core, on=['tech','scenario'], how='left')
+df['core'] = df['core'].fillna(0)
+
 #Calculate metrics
 df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
 df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
@@ -164,14 +171,51 @@ plots = [
     {'x':'gen_twh','y':'value_cost_adder'},
     {'x':'gen_twh','y':'integration_cost'},
 ]
-#Add plots with an upper limit on gen_frac
+#Add plots with an upper limit on gen_frac and lower limit on value factor
 gen_frac_lim = 0.65
-df_plot_lim = df_plot[df_plot['gen_frac']<=gen_frac_lim].copy()
+vf_lim = 0.2
+df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_lim) &  (df_plot['value_factor'] >= vf_lim)].copy()
 plots_lim = copy.deepcopy(plots)
 for p in plots_lim:
     p['lim'] = 'yes'
-for plot in plots + plots_lim:
-    df_plt = df_plot_lim if 'lim' in plot else df_plot
+#Limit further to just the core tech-scenario combinations
+df_plot_core = df_plot_lim[df_plot_lim['core']==1].copy()
+conv_techs = ['gas-cc','gas-cc-ccs_mod','nuclear','coal']
+re_techs = ['wind-ons','wind-ofs','geothermal','upv']
+#Add cost_factor_adj. For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.
+for tech in df_plot_core['tech'].unique():
+    df_tech = df_plot_core[df_plot_core['tech']==tech].copy()
+    if tech in conv_techs:
+        scale = df_tech['cost_factor'].mean()
+    elif tech in re_techs:
+        #Get the intercept of the ols line fit
+        lg = scipy.stats.linregress(df_tech['gen_frac'], df_tech['cost_factor'])
+        scale = lg.intercept
+    df_plot_core.loc[df_plot_core['tech']==tech, 'cost_factor_adj'] = df_plot_core['cost_factor'] / scale
+#Recalculate VCF
+df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_core['cost_factor_adj']
+#Find average VCF for all conv_techs, and use that to scale the VCF for all techs
+VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
+df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
+print(f'VCF_adj: {VCF_adj}')
+plots_core = [
+    {'x':'gen_frac','y':'value_factor', 'core': 'yes'},
+    {'x':'gen_frac','y':'cost_factor', 'core': 'yes'},
+    {'x':'gen_frac','y':'value_cost_factor', 'core': 'yes'},
+    {'x':'gen_frac','y':'cost_factor_adj', 'core': 'yes'},
+    {'x':'gen_frac','y':'value_cost_factor_adj', 'core': 'yes'},
+    {'x':'gen_frac','y':'value_cost_factor_adj2', 'core': 'yes'},
+]
+for plot in plots + plots_lim + plots_core:
+    if 'lim' in plot:
+        df_plt = df_plot_lim
+        lim_str = f'_vf-{vf_lim}_ms-{gen_frac_lim}'
+    elif 'core' in plot:
+        df_plt = df_plot_core
+        lim_str = f'_core'
+    else:
+        df_plt = df_plot
+        lim_str = ''
     fig = px.scatter(df_plt, x=plot['x'], y=plot['y'], color='tech scenario',
         hover_data=['tech scenario', 'year', 'gen_frac', plot['y']], trendline='ols',
         template='plotly_white', width=950, height=630)
@@ -179,5 +223,4 @@ for plot in plots + plots_lim:
     # fig.update_yaxes(range=[0, 1.205])
     fig.update_layout(font=dict(size=13))
     fig.update_traces(marker=dict(size=10))
-    lim_str = f'-lim{int(gen_frac_lim*100)}pct' if 'lim' in plot else ''
     fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}{lim_str}.html')
