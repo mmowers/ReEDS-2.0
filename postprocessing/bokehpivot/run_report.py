@@ -176,9 +176,8 @@ plots = [
     {'x':'gen_twh','y':'integration_cost'},
 ]
 #Add plots with an upper limit on gen_frac and lower limit on value factor
-gen_frac_lim = 0.65
-vf_lim = 0.2
-df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_lim) &  (df_plot['value_factor'] >= vf_lim)].copy()
+gen_frac_max = 0.65
+df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_max)].copy()
 plots_lim = copy.deepcopy(plots)
 for p in plots_lim:
     p['lim'] = 'yes'
@@ -201,6 +200,9 @@ df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_c
 #Find average VCF for all conv_techs, and use that to scale the VCF for all techs
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
 df_plot_core['value_cost_factor_adj2'] = df_plot_core['value_cost_factor_adj'] / VCF_adj
+#Apply minimum vcf to df_plot_core
+vcf_min = 0.2
+df_plot_core = df_plot_core[df_plot_core['value_cost_factor_adj2'] >= vcf_min].copy()
 with open(out_txt, 'a') as f:
     print(f'VCF_adj: {VCF_adj}', file=f)
 #Find average VF for all conv_techs, and use that to scale the VF for all techs (old method)
@@ -221,7 +223,7 @@ plots_core = [
 for plot in plots + plots_lim + plots_core:
     if 'lim' in plot:
         df_plt = df_plot_lim
-        lim_str = f'_vf-{vf_lim}_ms-{gen_frac_lim}'
+        lim_str = f'_ms-{gen_frac_max}'
     elif 'core' in plot:
         df_plt = df_plot_core
         lim_str = f'_core'
