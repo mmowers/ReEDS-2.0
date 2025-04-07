@@ -93,7 +93,7 @@ df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
 df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
-
+df['lcoe_base_orig'] = df['lcoe_base']
 #If "_IRA" is in the scenario name, subtract the PTC from LCOE
 ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc_value_scaled).
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
@@ -195,6 +195,8 @@ for tech in df_plot_core['tech'].unique():
         lg = scipy.stats.linregress(df_tech['gen_frac'], df_tech['cost_factor'])
         scale = lg.intercept
     df_plot_core.loc[df_plot_core['tech']==tech, 'cost_factor_adj'] = df_plot_core['cost_factor'] / scale
+    df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_adj'] = df_plot_core['lcoe_base'] * scale
+    df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_orig_adj'] = df_plot_core['lcoe_base_orig'] * scale
 #Recalculate VCF
 df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_core['cost_factor_adj']
 #Find average VCF for all conv_techs, and use that to scale the VCF for all techs
