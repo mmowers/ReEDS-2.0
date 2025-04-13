@@ -351,6 +351,7 @@ set
   thermal_storage(i)   "thermal storage technologies",
   upgrade(i)           "technologies that are upgrades from other technologies",
   upv(i)               "upv generation technologies",
+  upv_bat(i)           "upv and battery techs",
   vre_distributed(i)   "distributed PV technologies",
   vre_no_csp(i)        "variable renewable energy technologies that are not csp",
   vre_utility(i)       "utility scale wind and PV technologies",
@@ -990,6 +991,7 @@ storage_standalone(i)$(not ban(i))  = yes$i_subsets(i,'storage_standalone') ;
 storage(i)$(not ban(i))             = yes$i_subsets(i,'storage') ;
 thermal_storage(i)$(not ban(i))     = yes$i_subsets(i,'thermal_storage') ;
 upv(i)$(not ban(i))                 = yes$i_subsets(i,'upv') ;
+upv_bat(i)$(not ban(i))             = yes$i_subsets(i,'upv_bat') ;
 vre_distributed(i)$(not ban(i))     = yes$i_subsets(i,'vre_distributed') ;
 vre_no_csp(i)$(not ban(i))          = yes$i_subsets(i,'vre_no_csp') ;
 vre_utility(i)$(not ban(i))         = yes$i_subsets(i,'vre_utility') ;
