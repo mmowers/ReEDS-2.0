@@ -399,7 +399,7 @@ def process_reeds_data(topwdg, custom_sorts, custom_colors, result_dfs):
             df_join.drop_duplicates(subset=col, inplace=True)
             #merge df_join into df (for which all values have been lowercased)
             df_join[col] = df_join[col].str.lower()
-            df = pd.merge(left=df, right=df_join, on=col, sort=False)
+            df = pd.merge(left=df, right=df_join, on=col, how='left', sort=False)
 
     #Apply mappings, allowing wildcard *. Order matters here, the first match is used.
     for col in df.columns.values.tolist():
