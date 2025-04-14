@@ -443,7 +443,8 @@ def vizit_report(data_type, data_source, vizit_data, output_dir, auto_open):
         df_scen = pd.read_csv(data_source)
         df_scen['column_name'] = 'scenario'
         df_scen = df_scen.rename(columns={'name':'column_value'})
-        df_scen = df_scen[['column_name','column_value','color']].copy()
+        cols = [c for c in ['column_name','column_value','color'] if c in df_scen.columns]
+        df_scen = df_scen[cols].copy()
         df_style = pd.concat([df_style, df_scen],sort=False,ignore_index=True)
     data_dict['vizit_styles.csv'] = df_style.to_dict(orient='list')
     vizit_config['fileNames'].append('vizit_styles.csv')
