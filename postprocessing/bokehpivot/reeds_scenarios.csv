@@ -25,5 +25,5 @@ gas_lowTrans,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_gas_lowTrans
 gas_ccs,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_gas_ccs
 nuclear,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_nuclear
 coal,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_coal
-geothermal,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_geothermal
+geo,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_geothermal
 test,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_test
