@@ -3,6 +3,7 @@ ref,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_ref
 ref_IRA,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_ref_IRA
 tax,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_tax
 upv,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv
+upv_half,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_half
 upv_ba,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5ba_upv
 upv_lim,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_lim
 upv_bat,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_bat
@@ -11,6 +12,7 @@ upv_highBat,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_highBat
 upv_lowTrans,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_lowTrans
 upv_tax,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_upv_tax
 onswind,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_onswind
+onswind_half,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_onswind_half
 onswind_ba,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5ba_onswind
 onswind_lim,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_onswind_lim
 onswind_lowBat,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_onswind_lowBat
@@ -26,4 +28,5 @@ gas_ccs,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_gas_ccs
 nuclear,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_nuclear
 coal,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_coal
 geo,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_geo
+geo_lowTrans,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_geo_lowTrans
 test,/projects/cambium/mmowers/ReEDS_pub/runs/vcf5_test
