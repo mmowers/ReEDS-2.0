@@ -4,6 +4,7 @@ ReEDS functions and globals for bokehpivot integration
 from __future__ import division
 
 import os
+import re
 import copy
 import platform
 import pandas as pd
@@ -410,7 +411,16 @@ def process_reeds_data(topwdg, custom_sorts, custom_colors, result_dfs):
             df_map['raw'] = df_map['raw'].str.replace('*', '.*', regex=False)
             #now map from raw to display, but keep original column as "[column]_raw"
             df[col + '_raw'] = df[col]
-            df[col] = df[col].replace(to_replace=df_map['raw'].tolist(), value=df_map['display'].tolist(), regex=True)
+            #Pre-compile regex patterns
+            map_patterns = [(re.compile(pattern), display) for pattern, display in zip(df_map['raw'], df_map['display'])]
+            #Define a function to match once
+            def map_value(val):
+                for pattern, display in map_patterns:
+                    if pattern.match(str(val)):
+                        return display
+                return val  # if no match, keep original
+            #Apply function
+            df[col] = df[col].apply(map_value)
 
     #apply custom styling
     non_scen_col = [c for c in df.columns.values.tolist() if c != 'scenario']
