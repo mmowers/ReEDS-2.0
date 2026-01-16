@@ -1,15 +1,19 @@
-'''
-This file creates a figure with subfigures of LCOE_base vs year (upper left), cost-value factor vs. market share (upper right), and example PLCOE vs market share curves for select years (bottom), with lines for each tech.
+'''This file creates a figure with subfigures of LCOE_base vs year (upper left), cost-value factor vs. market share (upper right), and example PLCOE vs market share curves for select years (bottom), with lines for each tech.
 
 Run this file on the reeds2 conda environment.
 '''
-import pandas as pd
 import os
-from pdb import set_trace as b
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
-years = [2030,2040,2050]
+years = [2030, 2040, 2050]
+max_plcoe = 200
+max_cost_value_factor = 5
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
+tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
+df_output_path = os.path.join(this_dir, 'plcoe_pitch_df.csv')
 
 df = pd.read_csv(f'{this_dir}/valcostfac_core.csv')
 df['cost_value_factor'] = 1 / df['value_cost_factor']
@@ -25,5 +29,135 @@ df = df.merge(df_lcoe_sel, how='left', on='tech')
 for year in years:
     df[f'plcoe_{year}'] = df[f'lcoe_base_{year}'] * df['cost_value_factor']
 
-#Create the figure. Note that market share is the 'gen_frac' column in df.
-b()
+
+def normalize_tech_name(name):
+    return str(name).strip().lower()
+
+
+def load_style_colors(path):
+    """Load tech colors from tech_style.csv if present."""
+    if not os.path.exists(path):
+        return {}
+    style_df = pd.read_csv(path)
+    if 'order' not in style_df.columns or 'color' not in style_df.columns:
+        return {}
+    style_df = style_df.dropna(subset=['order', 'color'])
+    return {
+        normalize_tech_name(row['order']): str(row['color']).strip()
+        for _, row in style_df.iterrows()
+    }
+
+
+def build_color_map(techs):
+    """Return a consistent color mapping for all technologies, preferring tech_style.csv."""
+    style_map = load_style_colors(tech_style_path)
+    cmap = plt.get_cmap('tab20')
+    colors = {}
+    for idx, tech in enumerate(sorted(techs)):
+        colors[tech] = style_map.get(normalize_tech_name(tech), cmap(idx % cmap.N))
+    return colors
+
+
+def plot_plcoe_pitch(df, df_lcoe, output_path=None):
+    techs = sorted(df['tech'].unique())
+    colors = build_color_map(techs)
+
+    fig = plt.figure(figsize=(14, 9))
+    outer = fig.add_gridspec(2, 1, height_ratios=[1, 1.2], hspace=0.35)
+    top = outer[0].subgridspec(1, 2, wspace=0.3)
+    bottom = outer[1].subgridspec(1, len(years), wspace=0.25)
+
+    ax_lcoe = fig.add_subplot(top[0])
+    ax_cvf = fig.add_subplot(top[1])
+    bottom_axes = [fig.add_subplot(bottom[i]) for i in range(len(years))]
+
+    # LCOE vs year (upper left)
+    for tech in techs:
+        tech_data = df_lcoe[df_lcoe['tech'] == tech].sort_values('year')
+        if tech_data.empty:
+            continue
+        ax_lcoe.plot(
+            tech_data['year'],
+            tech_data['lcoe_base'],
+            label=tech,
+            color=colors[tech],
+            linewidth=1.8,
+            marker='o',
+            markersize=3,
+        )
+    ax_lcoe.set_title('LCOE base vs year')
+    ax_lcoe.set_xlabel('Year')
+    ax_lcoe.set_ylabel('LCOE base ($/MWh)')
+    ax_lcoe.set_ylim(bottom=0)
+    ax_lcoe.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+
+    # Cost-value factor vs market share (upper right) as line-dot
+    for tech in techs:
+        tech_data = df[df['tech'] == tech].sort_values('gen_frac')
+        if tech_data.empty:
+            continue
+        ax_cvf.plot(
+            tech_data['gen_frac'],
+            tech_data['cost_value_factor'],
+            color=colors[tech],
+            alpha=0.8,
+            linewidth=1.5,
+            marker='o',
+            markersize=3,
+        )
+    ax_cvf.set_title('Cost-value factor vs market share')
+    ax_cvf.set_xlabel('Market share (generation fraction)')
+    ax_cvf.set_ylabel('Cost-value factor')
+    ax_cvf.set_ylim(0, max_cost_value_factor)
+    ax_cvf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+
+    # PLCOE vs market share for select years (bottom row)
+    for ax, year in zip(bottom_axes, years):
+        for tech in techs:
+            tech_data = df[df['tech'] == tech].sort_values('gen_frac')
+            plcoe_col = f'plcoe_{year}'
+            tech_data = tech_data.dropna(subset=['gen_frac', plcoe_col])
+            if tech_data.empty:
+                continue
+            ax.plot(
+                tech_data['gen_frac'],
+                tech_data[plcoe_col],
+                color=colors[tech],
+                linewidth=1.5,
+                marker='o',
+                markersize=3,
+            )
+        ax.set_title(f'{year} PLCOE vs market share')
+        ax.set_xlabel('Market share (generation fraction)')
+        ax.set_ylim(0, max_plcoe)
+        if ax is bottom_axes[0]:
+            ax.set_ylabel('PLCOE ($/MWh)')
+        else:
+            ax.set_ylabel('')
+            ax.set_yticklabels([])
+        ax.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
+
+    # Shared legend for technologies
+    legend_handles = [
+        Line2D([0], [0], color=colors[tech], lw=2, label=tech) for tech in techs
+    ]
+    fig.legend(
+        legend_handles,
+        techs,
+        loc='lower center',
+        ncol=min(len(techs), 5),
+        fontsize=8,
+    )
+    fig.subplots_adjust(bottom=0.18)
+
+    if output_path is None:
+        output_path = os.path.join(this_dir, 'plcoe_pitch.png')
+
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    return fig
+
+
+if __name__ == '__main__':
+    plot_plcoe_pitch(df, df_lcoe)
+    df.to_csv(df_output_path, index=False)
+    plt.show()
