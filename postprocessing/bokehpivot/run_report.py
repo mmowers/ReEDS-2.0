@@ -65,6 +65,8 @@ df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy'
 df = df.merge(df_vf_energy, on=['scenario','tech','year'], how='left')
 df_vf_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg')
 df = df.merge(df_vf_resmarg, on=['scenario','tech','year'], how='left')
+df_vf_resmarg_permw = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg_permw')
+df = df.merge(df_vf_resmarg_permw, on=['scenario','tech','year'], how='left')
 df_vf_spatial = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_spatial')
 df = df.merge(df_vf_spatial, on=['scenario','tech','year'], how='left')
 df_vf_temporal = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_temporal')
@@ -127,9 +129,14 @@ df['core'] = df['core'].fillna(0)
 
 #Calculate metrics
 df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
+df['cost_value_factor'] = 1 / df['value_cost_factor']
 df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
 df['lcoe_adder'] = (df['lvoe'] - df['lcoe_base']) / df['force_mult'] #Here we unadjust by force_mult to get the real adder.
 df['integration_cost'] = df['benchmark_price'] - df['lvoe']
+df['relative_cost'] = df['lvoe'] / df['force_mult'] - df['benchmark_price']
+df['relative_cost_ratio'] = (df['lvoe'] / df['force_mult']) / df['benchmark_price']
+df['net_cost'] = df['relative_cost'] + df['integration_cost']
+df['BCR'] = df['lvoe'] / (df['lvoe'] / df['force_mult'])
 df['value_cost_adder'] = df['lcoe_adder'] + df['integration_cost']
 
 #Merge with generation
@@ -161,9 +168,11 @@ df_plot['tech scenario'] = df_plot['tech'] + ' ' + df_plot['scenario']
 plots = [
     {'x':'gen_frac','y':'value_factor'},
     {'x':'gen_frac','y':'value_cost_factor'},
+    {'x':'gen_frac','y':'cost_value_factor'},
     {'x':'gen_frac','y':'cost_factor'},
     {'x':'gen_frac','y':'vf_energy'},
     {'x':'gen_frac','y':'vf_resmarg'},
+    {'x':'gen_frac','y':'vf_resmarg_permw'},
     {'x':'gen_frac','y':'vf_comp_energy'},
     {'x':'gen_frac','y':'vf_comp_resmarg'},
     {'x':'gen_frac','y':'vf_temporal'},
@@ -172,8 +181,12 @@ plots = [
     {'x':'gen_frac','y':'vf_temporal_local'},
     {'x':'gen_frac','y':'vf_spatial_simultaneous'},
     {'x':'gen_twh','y':'lcoe_adder'},
-    {'x':'gen_twh','y':'value_cost_adder'},
-    {'x':'gen_twh','y':'integration_cost'},
+    {'x':'gen_frac','y':'value_cost_adder'},
+    {'x':'gen_frac','y':'integration_cost'},
+    {'x':'gen_frac','y':'relative_cost'},
+    {'x':'gen_frac','y':'relative_cost_ratio'},
+    {'x':'gen_frac','y':'net_cost'},
+    {'x':'gen_frac','y':'BCR'},
 ]
 #Add an upper limit on gen_frac and add intermediary "lim" plots, if desired
 gen_frac_max = 0.65
@@ -239,5 +252,6 @@ for plot in plots + plots_core:
     # fig.update_xaxes(range=[0, 1.005])
     # fig.update_yaxes(range=[0, 1.205])
     fig.update_layout(font=dict(size=13))
-    fig.update_traces(marker=dict(size=10))
+    fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
+    fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
     fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}{lim_str}.html')
