@@ -39,6 +39,7 @@ report_dir = os.path.dirname(report_path)
 sys.path.insert(1, report_dir)
 report_name = os.path.basename(report_path)[:-3]
 report = importlib.import_module(report_name)
+#Comment these two lines if the bokehpivot report is already made and you just want to run the custom post-processing below.
 rb.reeds_static(data_type, data_source, scenario_filter, diff, base, report.static_presets, report_path, report_format, html_num, output_dir, auto_open)
 shutil.copy2(os.path.realpath(__file__), output_dir)
 
