@@ -1,4 +1,4 @@
-'''This file creates a figure with subfigures of LCOE_base vs year, 1/(value factor) vs market share, cost factor vs market share, and (cost factor)/(value factor) vs market share (top), and example PLCOE vs market share curves for select years (bottom), with lines for each tech.
+'''This file creates two figures with subfigures of LCOE_base vs year, cost factor vs market share, and alternative value/cost-factor views (top), plus example PLCOE vs market share curves for select years (bottom), with lines for each tech.
 
 Run this file on the reeds2 conda environment.
 '''
@@ -10,6 +10,7 @@ from matplotlib.lines import Line2D
 years = [2030, 2040, 2050]
 max_plcoe = 200
 max_cost_value_factor = 5
+inv_value_factor_ylim = (0.8, 3)
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tech_style_path = os.path.join(this_dir, 'in', 'reeds2', 'tech_style.csv')
@@ -59,7 +60,13 @@ def build_color_map(techs):
     return colors
 
 
-def plot_plcoe_pitch(df, df_lcoe, output_path=None):
+def plot_plcoe_pitch(
+    df,
+    df_lcoe,
+    output_path=None,
+    use_inverse_value_factor=True,
+    use_cost_value_factor=True,
+):
     techs = sorted(df['tech'].unique())
     colors = build_color_map(techs)
 
@@ -103,14 +110,44 @@ def plot_plcoe_pitch(df, df_lcoe, output_path=None):
             zorder=5,
         )
 
-    # 1/(value factor) vs market share (upper middle-left)
+    if use_inverse_value_factor:
+        vf_col = 'inv_value_factor'
+        vf_title = '1/(value factor) vs market share'
+        vf_ylabel = '1/(value factor)'
+        vf_ylim = inv_value_factor_ylim
+    else:
+        vf_col = 'value_factor'
+        vf_title = 'value factor vs market share'
+        vf_ylabel = 'value factor'
+        vf_ylim = (
+            0,
+            1 / inv_value_factor_ylim[0],
+        )
+
+    if use_cost_value_factor:
+        ratio_col = 'cost_value_factor'
+        ratio_title = '(cost factor)/(value factor) vs market share'
+        ratio_ylabel = '(cost factor)/(value factor)'
+        ratio_ylim = (0.8, max_cost_value_factor)
+        formula_text = 'PLCOE = (LCOE base) * (cost factor)/(value factor)'
+    else:
+        ratio_col = 'value_cost_factor'
+        ratio_title = '(value factor)/(cost factor) vs market share'
+        ratio_ylabel = '(value factor)/(cost factor)'
+        ratio_ylim = (
+            0,
+            1 / 0.8,
+        )
+        formula_text = 'PLCOE = (LCOE base) / ((value factor)/(cost factor))'
+
+    # Value factor view vs market share (upper middle-left)
     for tech in techs:
         tech_data = df[df['tech'] == tech].sort_values('gen_frac')
         if tech_data.empty:
             continue
         ax_inv_vf.plot(
             tech_data['gen_frac'],
-            tech_data['inv_value_factor'],
+            tech_data[vf_col],
             color=colors[tech],
             alpha=0.9,
             linewidth=1.5,
@@ -118,10 +155,10 @@ def plot_plcoe_pitch(df, df_lcoe, output_path=None):
             marker='o',
             markersize=3,
         )
-    ax_inv_vf.set_title('1/(value factor) vs market share')
+    ax_inv_vf.set_title(vf_title)
     ax_inv_vf.set_xlabel('Market share (generation fraction)')
-    ax_inv_vf.set_ylabel('1/(value factor)')
-    ax_inv_vf.set_ylim(0.8, 3)
+    ax_inv_vf.set_ylabel(vf_ylabel)
+    ax_inv_vf.set_ylim(vf_ylim)
     ax_inv_vf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
 
     # Cost factor vs market share (upper middle-right)
@@ -145,24 +182,24 @@ def plot_plcoe_pitch(df, df_lcoe, output_path=None):
     ax_cf.set_ylim(0.8, 3)
     ax_cf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
 
-    # (cost factor)/(value factor) vs market share (upper right)
+    # Ratio view vs market share (upper right)
     for tech in techs:
         tech_data = df[df['tech'] == tech].sort_values('gen_frac')
         if tech_data.empty:
             continue
         ax_cvf.plot(
             tech_data['gen_frac'],
-            tech_data['cost_value_factor'],
+            tech_data[ratio_col],
             color=colors[tech],
             alpha=0.8,
             linewidth=1.5,
             marker='o',
             markersize=3,
         )
-    ax_cvf.set_title('(cost factor)/(value factor) vs market share')
+    ax_cvf.set_title(ratio_title)
     ax_cvf.set_xlabel('Market share (generation fraction)')
-    ax_cvf.set_ylabel('(cost factor)/(value factor)')
-    ax_cvf.set_ylim(0.8, max_cost_value_factor)
+    ax_cvf.set_ylabel(ratio_ylabel)
+    ax_cvf.set_ylim(ratio_ylim)
     ax_cvf.grid(True, linestyle='--', linewidth=0.6, alpha=0.7)
 
     # PLCOE vs market share for select years (bottom row)
@@ -216,7 +253,7 @@ def plot_plcoe_pitch(df, df_lcoe, output_path=None):
     fig.text(
         0.5,
         formula_y,
-        'PLCOE = (LCOE base) * (cost factor)/(value factor)',
+        formula_text,
         ha='center',
         va='center',
         fontsize=12,
@@ -232,12 +269,27 @@ def plot_plcoe_pitch(df, df_lcoe, output_path=None):
     )
 
     if output_path is None:
-        output_path = os.path.join(this_dir, 'plcoe_pitch.png')
+        output_path = os.path.join(this_dir, 'plcoe_pitch_cost-value-factor.png')
 
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
 
 
 if __name__ == '__main__':
-    plot_plcoe_pitch(df, df_lcoe)
+    fig_cost_value = plot_plcoe_pitch(
+        df,
+        df_lcoe,
+        output_path=os.path.join(this_dir, 'plcoe_pitch_cost-value-factor.png'),
+        use_inverse_value_factor=True,
+        use_cost_value_factor=True,
+    )
+    fig_value_cost = plot_plcoe_pitch(
+        df,
+        df_lcoe,
+        output_path=os.path.join(this_dir, 'plcoe_pitch_value-cost-factor.png'),
+        use_inverse_value_factor=False,
+        use_cost_value_factor=False,
+    )
+    plt.close(fig_cost_value)
+    plt.close(fig_value_cost)
     df.to_csv(df_output_path, index=False)
