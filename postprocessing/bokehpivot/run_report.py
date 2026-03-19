@@ -50,18 +50,18 @@ out_txt = f'{output_dir}/out.txt'
 with open(out_txt, 'w') as f:
     print("Results:", file=f)
 
-#Read in custom files
+print('Read in custom files')
 df_lcoe_base = pd.read_csv(f'{bokehpivot_dir}/LCOE_base.csv')
 df_forcetech_map = pd.read_csv(f'{bokehpivot_dir}/forcetech_map.csv')
 df_core = pd.read_csv(f'{bokehpivot_dir}/core_tech_scen.csv')
 
-#Read in value factors
+print('Read in value factors')
 df = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf')
 df = df.rename(columns={'vf': 'value_factor'})
 df = df[df['tech'].isin(df_forcetech_map['tech'])].copy()
 df = df[df['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
 
-#Merge with vf components
+print('Merge with vf components')
 df_vf_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_energy').rename(columns={'vf_load':'vf_energy'})
 df = df.merge(df_vf_energy, on=['scenario','tech','year'], how='left')
 df_vf_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_resmarg')
@@ -77,14 +77,14 @@ df = df.merge(df_vf_interaction, on=['scenario','tech','year'], how='left')
 df['vf_temporal_local'] = df['vf_temporal'] * df['vf_interaction']
 df['vf_spatial_simultaneous'] = df['vf_spatial'] * df['vf_interaction']
 
-#Merge with benchmark price and calculate LVOE
+print('Merge with benchmark price and calculate LVOE')
 df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
 df_bench = df_bench.rename(columns={'$':'benchmark_price'})
 df_bench = df_bench.groupby(['scenario','year'], as_index=False)['benchmark_price'].sum()
 df = df.merge(df_bench, on=['scenario','year'], how='left')
 df['lvoe'] = df['value_factor'] * df['benchmark_price']
 
-#Merge with LVOE components
+print('Merge with LVOE components')
 df_lvoe_energy = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_energy').rename(columns={'val_load':'lvoe_energy'})
 df = df.merge(df_lvoe_energy, on=['scenario','tech','year'], how='left')
 df_lvoe_resmarg = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='lvoe_resmarg').rename(columns={'val_resmarg':'lvoe_resmarg'})
@@ -92,7 +92,23 @@ df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 df['vf_comp_energy'] = df['lvoe_energy'] / df['benchmark_price']
 df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
-#Merge with LCOE_base
+print('Read in vf_full for transreg calcs (eventually I should use this for everything I think).')
+df_tr = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
+df_tr = df_tr[df_tr['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
+df_tr = df_tr[df_tr['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
+df_tr = df_tr.groupby(['tech','scenario','year','transreg'], as_index=False)[['mwh','val_tot']].sum()
+df_tr['lvoe'] = df_tr['val_tot'] / df_tr['mwh']
+df_tr_bench = df_tr[df_tr['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench'})
+df_tr = df_tr[df_tr['tech']!='benchmark'].copy()
+df_tr = df_tr.merge(df_tr_bench, on=['scenario','year','transreg'], how='left')
+df_tr['vf'] = df_tr['lvoe'] / df_tr['lvoe_bench']
+df_tr = df_tr.pivot_table(index=['tech','scenario','year'], columns='transreg', values='vf')
+df_tr.columns = [f'vf_{c}' for c in df_tr.columns]
+df_tr = df_tr.reset_index()
+isos = ['NorthernGrid','CAISO','WestConnect','SPP','MISO','ERCOT','PJM','SERTP','FRCC','NYISO','ISONE']
+df = df.merge(df_tr, on=['tech','scenario','year'], how='left')
+
+print('Merge with LCOE_base')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
 df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
 df = df.merge(df_lcoe_base, on=['tech','year'], how='left')
@@ -102,7 +118,7 @@ ptc = 18.31481632 #11.36 2004$/MWh, converted to 2023$ (taken from ReEDS run ptc
 #If "_IRA" is in the scenario name, subtract the ptc from lcoe
 df.loc[df['scenario'].str.contains('_IRA'), 'lcoe_base'] = df['lcoe_base'] - ptc
 
-#Add cost multipliers
+print('Add cost multipliers')
 df_scens = pd.read_csv(data_source)
 for i, scen in df_scens.iterrows():
     sw = pd.read_csv(f'{scen["path"]}/inputs_case/switches.csv', index_col=0).iloc[:,0]
@@ -123,12 +139,12 @@ df = df.drop(columns=['y0','y1','m0','m1']).copy()
 df['frc'] = df['frc'].fillna(0)
 df['lcoe_base'] = df['lcoe_base'] * df['force_mult']
 
-#Add core tech-scenario combinations
+print('Add core tech-scenario combinations')
 df_core['core'] = 1
 df = df.merge(df_core, on=['tech','scenario'], how='left')
 df['core'] = df['core'].fillna(0)
 
-#Calculate metrics
+print('Calculate metrics')
 df['value_cost_factor'] = df['lcoe_base'] / df['benchmark_price']
 df['cost_value_factor'] = 1 / df['value_cost_factor']
 df['cost_factor'] = df['lvoe'] / df['lcoe_base'] #Here we assume lcoe = lvoe, which is true on the margin.
@@ -140,24 +156,26 @@ df['net_cost'] = df['relative_cost'] + df['integration_cost']
 df['BCR'] = df['lvoe'] / (df['lvoe'] / df['force_mult'])
 df['value_cost_adder'] = df['lcoe_adder'] + df['integration_cost']
 
-#Merge with generation
+print('Merge with generation')
 df_gen = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen')
 df_gen = df_gen.rename(columns={'Generation (TWh)': 'gen_twh'})
 df_gen = df_gen[['scenario','tech','year','gen_twh']].copy()
 df = df.merge(df_gen, on=['scenario','tech','year'], how='left')
 
-#Merge with generation fraction
+print('Merge with generation fraction')
 df_gen_frac = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='gen_frac')
 df_gen_frac = df_gen_frac.rename(columns={'Generation (TWh)': 'gen_frac'})
 df_gen_frac = df_gen_frac[['scenario','tech','year','gen_frac']].copy()
 df = df.merge(df_gen_frac, on=['scenario','tech','year'], how='left')
 
+print('output valcostfac.csv')
 df.to_csv(f'{output_dir}/valcostfac.csv', index=False)
 
-#Make plots and line fits
+print('Make plots and line fits')
 import plotly.express as px #I needed to run "pip install plotly statsmodels"
 os.makedirs(f'{output_dir}/plots')
-#Restrict to just those scenarios with 'frc' == 1 or other specified scenario-tech combinations
+
+print('Restrict to just those scenarios with "frc" == 1 or other specified scenario-tech combinations')
 plot_cond = (
     (df['frc']==1) |
     ((df['tech'].isin(['upv','wind-ons'])) & (df['scenario'].isin(['ref','ref_IRA','tax']))) |
@@ -189,17 +207,21 @@ plots = [
     {'x':'gen_frac','y':'net_cost'},
     {'x':'gen_frac','y':'BCR'},
 ]
-#Add an upper limit on gen_frac and add intermediary "lim" plots, if desired
+plots += [{'x':'gen_frac','y':f'vf_{iso}'} for iso in isos if f'vf_{iso}' in df_plot.columns]
+
+print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired (we probably should also have a lower limit for value factors)')
 gen_frac_max = 0.65
 df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_max)].copy()
 plots_lim = copy.deepcopy(plots)
 for p in plots_lim:
     p['lim'] = 'yes'
-#Limit further to just the core tech-scenario combinations
+
+print('Limit further to just the core tech-scenario combinations')
 df_plot_core = df_plot_lim[df_plot_lim['core']==1].copy()
 conv_techs = ['gas-cc','gas-cc-ccs_mod','nuclear','coal']
 re_techs = ['wind-ons','wind-ofs','geothermal','upv']
-#Add cost_factor_adj. For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.
+
+print('Add cost_factor_adj. For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.')
 for tech in df_plot_core['tech'].unique():
     df_tech = df_plot_core[df_plot_core['tech']==tech].copy()
     if tech in conv_techs:
@@ -211,7 +233,8 @@ for tech in df_plot_core['tech'].unique():
     df_plot_core.loc[df_plot_core['tech']==tech, 'cost_factor_adj'] = df_plot_core['cost_factor'] / scale
     df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_adj'] = df_plot_core['lcoe_base'] * scale
     df_plot_core.loc[df_plot_core['tech']==tech, 'lcoe_base_orig_adj'] = df_plot_core['lcoe_base_orig'] * scale
-#Recalculate VCF
+
+print('Recalculate VCF')
 df_plot_core['value_cost_factor_adj'] = df_plot_core['value_factor'] / df_plot_core['cost_factor_adj']
 #Find average VCF for all conv_techs, and use that to scale the VCF for all techs
 VCF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_cost_factor_adj'].mean()
@@ -221,11 +244,14 @@ vcf_min = 0
 df_plot_core = df_plot_core[df_plot_core['value_cost_factor_adj2'] >= vcf_min].copy()
 with open(out_txt, 'a') as f:
     print(f'VCF_adj: {VCF_adj}', file=f)
-#Find average VF for all conv_techs, and use that to scale the VF for all techs (old method)
+
+print('Find average VF for all conv_techs, and use that to scale the VF for all techs (old method)')
 VF_adj = df_plot_core[df_plot_core['tech'].isin(conv_techs)]['value_factor'].mean()
 df_plot_core['value_factor_adj_old'] = df_plot_core['value_factor'] / VF_adj
 with open(out_txt, 'a') as f:
     print(f'VF_adj (old): {VF_adj}', file=f)
+
+print('output valcostfac_core.csv')
 df_plot_core.to_csv(f'{output_dir}/valcostfac_core.csv', index=False)
 plots_core = [
     {'x':'gen_frac','y':'value_factor', 'core': 'yes'},
@@ -236,7 +262,8 @@ plots_core = [
     {'x':'gen_frac','y':'value_cost_factor_adj', 'core': 'yes'},
     {'x':'gen_frac','y':'value_cost_factor_adj2', 'core': 'yes'},
 ]
-#Include plots_lim for all plots with gen_frac <= gen_frac_max
+
+print('Include plots_lim for all plots with gen_frac <= gen_frac_max')
 for plot in plots + plots_core:
     if 'lim' in plot:
         df_plt = df_plot_lim
