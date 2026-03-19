@@ -92,21 +92,33 @@ df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 df['vf_comp_energy'] = df['lvoe_energy'] / df['benchmark_price']
 df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
-print('Read in vf_full for transreg calcs (eventually I should use this for everything I think).')
-df_tr = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
-df_tr = df_tr[df_tr['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
-df_tr = df_tr[df_tr['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
-df_tr = df_tr.groupby(['tech','scenario','year','transreg'], as_index=False)[['mwh','val_tot']].sum()
+print('Read in vf_full for transreg and interconnect calcs') #Eventually I should use vf_full for everything I think
+df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
+df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
+df_full = df_full[df_full['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
+df_tr = df_full.groupby(['tech','scenario','year','transreg'], as_index=False)[['mwh','val_tot']].sum()
 df_tr['lvoe'] = df_tr['val_tot'] / df_tr['mwh']
 df_tr_bench = df_tr[df_tr['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench'})
 df_tr = df_tr[df_tr['tech']!='benchmark'].copy()
 df_tr = df_tr.merge(df_tr_bench, on=['scenario','year','transreg'], how='left')
 df_tr['vf'] = df_tr['lvoe'] / df_tr['lvoe_bench']
 df_tr = df_tr.pivot_table(index=['tech','scenario','year'], columns='transreg', values='vf')
-df_tr.columns = [f'vf_{c}' for c in df_tr.columns]
+df_tr.columns = [f'vf_ISO_{c}' for c in df_tr.columns]
 df_tr = df_tr.reset_index()
 isos = ['NorthernGrid','CAISO','WestConnect','SPP','MISO','ERCOT','PJM','SERTP','FRCC','NYISO','ISONE']
 df = df.merge(df_tr, on=['tech','scenario','year'], how='left')
+
+df_int = df_full.groupby(['tech','scenario','year','interconnect'], as_index=False)[['mwh','val_tot']].sum()
+df_int['lvoe'] = df_int['val_tot'] / df_int['mwh']
+df_int_bench = df_int[df_int['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench'})
+df_int = df_int[df_int['tech']!='benchmark'].copy()
+df_int = df_int.merge(df_int_bench, on=['scenario','year','interconnect'], how='left')
+df_int['vf'] = df_int['lvoe'] / df_int['lvoe_bench']
+df_int = df_int.pivot_table(index=['tech','scenario','year'], columns='interconnect', values='vf')
+df_int.columns = [f'vf_int_{c}' for c in df_int.columns]
+df_int = df_int.reset_index()
+interconnects = ['eastern','western','ercot']
+df = df.merge(df_int, on=['tech','scenario','year'], how='left')
 
 print('Merge with LCOE_base')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
@@ -207,9 +219,10 @@ plots = [
     {'x':'gen_frac','y':'net_cost'},
     {'x':'gen_frac','y':'BCR'},
 ]
-plots += [{'x':'gen_frac','y':f'vf_{iso}'} for iso in isos if f'vf_{iso}' in df_plot.columns]
+plots += [{'x':'gen_frac','y':f'vf_ISO_{iso}'} for iso in isos if f'vf_ISO_{iso}' in df_plot.columns]
+plots += [{'x':'gen_frac','y':f'vf_int_{i}'} for i in interconnects if f'vf_int_{i}' in df_plot.columns]
 
-print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired (we probably should also have a lower limit for value factors)')
+print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired') #We probably should also have a lower limit for value factors
 gen_frac_max = 0.65
 df_plot_lim = df_plot[(df_plot['gen_frac'] <= gen_frac_max)].copy()
 plots_lim = copy.deepcopy(plots)
@@ -221,7 +234,7 @@ df_plot_core = df_plot_lim[df_plot_lim['core']==1].copy()
 conv_techs = ['gas-cc','gas-cc-ccs_mod','nuclear','coal']
 re_techs = ['wind-ons','wind-ofs','geothermal','upv']
 
-print('Add cost_factor_adj. For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.')
+print('Add cost_factor_adj') #For conv_techs this is equal to cost_factor divided by average cost_factor. For re_techs, this is equal to cost_factor divided by the intercept of the ols line fit.
 for tech in df_plot_core['tech'].unique():
     df_tech = df_plot_core[df_plot_core['tech']==tech].copy()
     if tech in conv_techs:
