@@ -95,29 +95,19 @@ print('Read in vf_full for transreg and interconnect calcs') #Eventually I shoul
 df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
 df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
 df_full = df_full[df_full['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
-df_tr = df_full.groupby(['tech','scenario','year','transreg'], as_index=False)[['mwh','val_tot']].sum()
-df_tr['lvoe'] = df_tr['val_tot'] / df_tr['mwh']
-df_tr_bench = df_tr[df_tr['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench'})
-df_tr = df_tr[df_tr['tech']!='benchmark'].copy()
-df_tr = df_tr.merge(df_tr_bench, on=['scenario','year','transreg'], how='left')
-df_tr['vf'] = df_tr['lvoe'] / df_tr['lvoe_bench']
-df_tr = df_tr.pivot_table(index=['tech','scenario','year'], columns='transreg', values='vf')
-df_tr.columns = [f'vf_ISO_{c}' for c in df_tr.columns]
-df_tr = df_tr.reset_index()
-isos = ['NorthernGrid','CAISO','WestConnect','SPP','MISO','ERCOT','PJM','SERTP','FRCC','NYISO','ISONE']
-df = df.merge(df_tr, on=['tech','scenario','year'], how='left')
-
-df_int = df_full.groupby(['tech','scenario','year','interconnect'], as_index=False)[['mwh','val_tot']].sum()
-df_int['lvoe'] = df_int['val_tot'] / df_int['mwh']
-df_int_bench = df_int[df_int['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench'})
-df_int = df_int[df_int['tech']!='benchmark'].copy()
-df_int = df_int.merge(df_int_bench, on=['scenario','year','interconnect'], how='left')
-df_int['vf'] = df_int['lvoe'] / df_int['lvoe_bench']
-df_int = df_int.pivot_table(index=['tech','scenario','year'], columns='interconnect', values='vf')
-df_int.columns = [f'vf_int_{c}' for c in df_int.columns]
-df_int = df_int.reset_index()
-interconnects = ['eastern','western','ercot']
-df = df.merge(df_int, on=['tech','scenario','year'], how='left')
+subregs = ['transreg','interconnect']
+dfs_subreg = {}
+for subreg in subregs:
+    df_sub = df_full.groupby(['tech','scenario','year',subreg], as_index=False)[['mwh','val_tot']].sum()
+    df_sub['lvoe'] = df_sub['val_tot'] / df_sub['mwh']
+    df_sub_bench = df_sub[df_sub['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench','mwh':'mwh_bench','val_tot':'val_tot_bench'})
+    df_sub = df_sub[df_sub['tech']!='benchmark'].copy()
+    df_sub = df_sub.merge(df_sub_bench, on=['scenario','year',subreg], how='left')
+    df_sub['vf'] = df_sub['lvoe'] / df_sub['lvoe_bench']
+    df_sub['gen_frac'] = df_sub['mwh'] / df_sub['mwh_bench']
+    #Restrict to only core tech-scenario combinations
+    df_sub = df_sub.merge(df_core[['tech','scenario']], on=['tech','scenario'], how='inner')
+    dfs_subreg[subreg] = df_sub.copy()
 
 print('Merge with LCOE_base')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
@@ -218,8 +208,6 @@ plots = [
     {'x':'gen_frac','y':'net_cost'},
     {'x':'gen_frac','y':'BCR'},
 ]
-plots += [{'x':'gen_frac','y':f'vf_ISO_{iso}'} for iso in isos if f'vf_ISO_{iso}' in df_plot.columns]
-plots += [{'x':'gen_frac','y':f'vf_int_{i}'} for i in interconnects if f'vf_int_{i}' in df_plot.columns]
 
 print('Add an upper limit on gen_frac and add intermediary "lim" plots, if desired') #We probably should also have a lower limit for value factors
 gen_frac_max = 0.65
@@ -295,3 +283,16 @@ for plot in plots + plots_core:
     fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
     fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
     fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}{lim_str}.html')
+
+print('Make subregion vf-vs-gen_frac plots')
+for subreg in subregs:
+    df_sub = dfs_subreg[subreg]
+    for scenario in df_sub['scenario'].unique():
+        df_plt = df_sub[df_sub['scenario']==scenario]
+        fig = px.scatter(df_plt, x='gen_frac', y='vf', color=subreg,
+            hover_data=[subreg, 'year', 'gen_frac', 'vf'], trendline='ols',
+            template='plotly_white', width=950, height=630)
+        fig.update_layout(font=dict(size=13))
+        fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
+        fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
+        fig.write_html(f'{output_dir}/plots/vf-vs-gen_frac_{subreg}_{scenario}.html')
