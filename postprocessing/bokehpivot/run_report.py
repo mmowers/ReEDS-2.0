@@ -78,9 +78,8 @@ df['vf_temporal_local'] = df['vf_temporal'] * df['vf_interaction']
 df['vf_spatial_simultaneous'] = df['vf_spatial'] * df['vf_interaction']
 
 print('Merge with benchmark price and calculate LVOE')
-df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='elec_price')
-df_bench = df_bench.rename(columns={'$':'benchmark_price'})
-df_bench = df_bench.groupby(['scenario','year'], as_index=False)['benchmark_price'].sum()
+df_bench = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='bench_price')
+df_bench = df_bench.rename(columns={'val_tot':'benchmark_price'})
 df = df.merge(df_bench, on=['scenario','year'], how='left')
 df['lvoe'] = df['value_factor'] * df['benchmark_price']
 

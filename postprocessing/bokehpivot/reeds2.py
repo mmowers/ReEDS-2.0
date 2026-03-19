@@ -2329,6 +2329,7 @@ results_meta = collections.OrderedDict((
             ('LVOE Firm Capacity by Year', {'x':'year','y':'val_resmarg','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('LVOE Operating Reserves by Year', {'x':'year','y':'val_opres','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
             ('LVOE State RPS by Year', {'x':'year','y':'val_rps','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','explode':'tech','chart_type':'Dot-Line', 'sync_axes':'No'}),
+            ('Benchmark Price by Year', {'x':'year','y':'val_tot','y_b':'mwh','y_agg':'sum(a)/sum(b)','series':'scenario','chart_type':'Dot-Line', 'sync_axes':'No', 'filter': {'tech':['benchmark']}}),
         )),
         }
     ),
