@@ -7,6 +7,7 @@ storage_techs = ['pumped-hydro','pumped-hydro-flex','battery', 'battery_2', 'bat
 
 static_presets = [
     {'name': 'Generation (TWh)', 'sheet_name':'gen', 'result': 'Generation National (TWh)', 'preset': 'Stacked Bars'},
+    {'name': 'Generation BA (TWh)', 'sheet_name':'gen_ba', 'result': 'Generation BA (TWh) [no-index]', 'preset': 'Stacked Bars','download_full_source': True},
     {'name': 'Capacity (GW)', 'sheet_name':'cap', 'result': 'Capacity National (GW)', 'preset': 'Stacked Bars'},
     {'name': 'New Annual Capacity (GW)', 'sheet_name':'cap_new_ann', 'result': 'New Annual Capacity National (GW)', 'preset': 'Stacked Bars'},
     {'name': 'Annual Retirements (GW)', 'sheet_name':'retire_ann', 'result': 'Annual Retirements National (GW)', 'preset': 'Stacked Bars'},
