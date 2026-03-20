@@ -91,26 +91,6 @@ df = df.merge(df_lvoe_resmarg, on=['scenario','tech','year'], how='left')
 df['vf_comp_energy'] = df['lvoe_energy'] / df['benchmark_price']
 df['vf_comp_resmarg'] = df['lvoe_resmarg'] / df['benchmark_price']
 
-print('Read in vf_full for transreg and interconnect calcs') #Eventually I should use vf_full for everything I think
-df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
-df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
-df_full = df_full[df_full['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
-subregs = ['transreg','interconnect']
-dfs_subreg = {}
-for subreg in subregs:
-    df_sub = df_full.groupby(['tech','scenario','year',subreg], as_index=False)[['mwh','val_tot']].sum()
-    df_sub['lvoe'] = df_sub['val_tot'] / df_sub['mwh']
-    df_sub_bench = df_sub[df_sub['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench','mwh':'mwh_bench','val_tot':'val_tot_bench'})
-    df_sub = df_sub[df_sub['tech']!='benchmark'].copy()
-    df_sub = df_sub.merge(df_sub_bench, on=['scenario','year',subreg], how='left')
-    df_sub['vf'] = df_sub['lvoe'] / df_sub['lvoe_bench']
-    df_gen_sub = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name=f'gen_{subreg}')
-    df_sub = df_sub.merge(df_gen_sub, on=['scenario','tech','year',subreg], how='left')
-    df_sub['gen_frac'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
-    #Restrict to only core tech-scenario combinations
-    df_sub = df_sub.merge(df_core[['tech','scenario']], on=['tech','scenario'], how='inner')
-    dfs_subreg[subreg] = df_sub.copy()
-
 print('Merge with LCOE_base')
 #LCOE_base.csv (in 2022$/MWh) uses default ATB Moderate 2024 techs: Tech 1 class 4 land-based wind, Fixed-bottom class 3 offshore wind, class 5 utility PV, 2-on-1 f-frame  gas-cc, large nuclear, and coal-new. LCOE for gas and coal were calculated, as they aren't in the ATB. Gas prices were taken from ng_AEO_2023_reference.csv and ng_demand_AEO_2023_reference.csv (weighted average), and coal was taken from coal_AEO_2023_reference.csv (all in 2022$)
 df_lcoe_base['lcoe_base'] = df_lcoe_base['lcoe_base'] * 1.041 #Converted to 2023$ from 2022$ (2024 ATB)
@@ -286,15 +266,40 @@ for plot in plots + plots_core:
     fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
     fig.write_html(f'{output_dir}/plots/{plot["y"]}-vs-{plot["x"]}{lim_str}.html')
 
-print('Make subregion vf-vs-gen_frac plots')
+print('Read in vf_full for transreg and interconnect calcs') #Eventually I should use vf_full for everything I think
+df_full = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name='vf_full')
+df_full = df_full[df_full['tech'].isin(df_forcetech_map['tech'].tolist() + ['benchmark'])].copy()
+df_full = df_full[df_full['year']>=2024].copy() #2024 is the first endogenous year (also without prescribed builds).
+subregs = ['transreg','interconnect']
+dfs_subreg = {}
+for subreg in subregs:
+    df_sub = df_full.groupby(['tech','scenario','year',subreg], as_index=False)[['mwh','val_tot']].sum()
+    df_sub['lvoe'] = df_sub['val_tot'] / df_sub['mwh']
+    df_sub_bench = df_sub[df_sub['tech']=='benchmark'].copy().drop(columns=['tech']).rename(columns={'lvoe':'lvoe_bench','mwh':'mwh_bench','val_tot':'val_tot_bench'})
+    df_sub = df_sub[df_sub['tech']!='benchmark'].copy()
+    #Restrict to only core tech-scenario combinations
+    df_sub = df_sub.merge(df_core[['tech','scenario']], on=['tech','scenario'], how='inner')
+    df_sub = df_sub.merge(df_sub_bench, on=['scenario','year',subreg], how='left')
+    df_sub['vf'] = df_sub['lvoe'] / df_sub['lvoe_bench']
+    df_gen_sub = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name=f'gen_{subreg}')
+    df_sub = df_sub.merge(df_gen_sub, on=['scenario','tech','year',subreg], how='left')
+    df_sub['gen_frac'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
+    #Merge in lcoe_base and use to calculate vcf.
+    df_sub = df_sub.merge(df[['scenario','tech','year','lcoe_base']], on=['scenario','tech','year'], how='left')
+    df_sub['vcf'] = df_sub['lcoe_base'] / df_sub['lvoe_bench']
+    dfs_subreg[subreg] = df_sub.copy()
+
+print('Make subregion plots')
+metrics = ['vf','vcf']
 for subreg in subregs:
     df_sub = dfs_subreg[subreg]
     for scenario in df_sub['scenario'].unique():
         df_plt = df_sub[df_sub['scenario']==scenario]
-        fig = px.scatter(df_plt, x='gen_frac', y='vf', color=subreg,
-            hover_data=[subreg, 'year', 'gen_frac', 'vf'], trendline='ols',
-            template='plotly_white', width=950, height=630)
-        fig.update_layout(font=dict(size=13))
-        fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
-        fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
-        fig.write_html(f'{output_dir}/plots/vf-vs-gen_frac_{subreg}_{scenario}.html')
+        for metric in metrics:
+            fig = px.scatter(df_plt, x='gen_frac', y=metric, color=subreg,
+                hover_data=[subreg, 'year', 'gen_frac', metric], trendline='ols',
+                template='plotly_white', width=950, height=630)
+            fig.update_layout(font=dict(size=13))
+            fig.update_traces(mode='lines+markers', marker=dict(size=10), selector=dict(mode='markers'))
+            fig.update_traces(line=dict(dash='dash', width=2), selector=dict(mode='lines'))
+            fig.write_html(f'{output_dir}/plots/{metric}-vs-gen_frac_{subreg}_{scenario}.html')
