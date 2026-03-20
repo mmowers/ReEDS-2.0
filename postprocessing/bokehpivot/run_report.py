@@ -104,7 +104,9 @@ for subreg in subregs:
     df_sub = df_sub[df_sub['tech']!='benchmark'].copy()
     df_sub = df_sub.merge(df_sub_bench, on=['scenario','year',subreg], how='left')
     df_sub['vf'] = df_sub['lvoe'] / df_sub['lvoe_bench']
-    df_sub['gen_frac'] = df_sub['mwh'] / df_sub['mwh_bench']
+    df_gen_sub = pd.read_excel(f'{output_dir}/report.xlsx', sheet_name=f'gen_{subreg}')
+    df_sub = df_sub.merge(df_gen_sub, on=['scenario','tech','year',subreg], how='left')
+    df_sub['gen_frac'] = df_sub['Generation (TWh)']*1e6 / df_sub['mwh_bench']
     #Restrict to only core tech-scenario combinations
     df_sub = df_sub.merge(df_core[['tech','scenario']], on=['tech','scenario'], how='inner')
     dfs_subreg[subreg] = df_sub.copy()
